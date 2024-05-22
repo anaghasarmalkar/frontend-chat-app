@@ -1,10 +1,23 @@
 .main {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6rem;
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
+}
+
+.roomsContainer {
+  flex: 1 1 30%;
+  max-width: 50%;
+}
+.createRoom {
+  padding: 1rem;
+  height: 10%;
+}
+.room {
+  height: 40%;
+}
+
+.window {
+  flex: 1;
 }
 
 .description {
