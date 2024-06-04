@@ -1,21 +1,15 @@
 "use client";
 
-import * as changeKeys from "change-case/keys";
 import styles from "./page.module.css";
-import { useEffect, useMemo, useState, ChangeEvent } from "react";
+import { useEffect, useMemo, useState, ChangeEvent, ReactNode } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { v4 as uuidv4 } from "uuid";
-import Dialog from "@mui/material/Dialog";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   AppBar,
   Box,
   Collapse,
   CssBaseline,
   Divider,
-  IconButton,
   List,
   ListItem,
   ListItemButton,
@@ -25,14 +19,16 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import SendIcon from "@mui/icons-material/Send";
 import Drawer from "@mui/material/Drawer";
 import AddIcon from "@mui/icons-material/Add";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import GroupIcon from "@mui/icons-material/Group";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import NewRoom from "@/components/NewRoom";
+import ChatRoom from "@/components/ChatRoom";
+import AskToJoin from "@/components/AskToJoin";
+
 type Room = {
   room_uuid: string;
   name: string;
@@ -44,39 +40,26 @@ type Room = {
   is_deleted: boolean;
 };
 
-type Message = {
+export type Message = {
   message_uuid: string;
   message: string;
   timestamp: string;
   sender: string;
 };
 
+export enum CurrentWindowType {
+  Welcome,
+  NewRoom,
+  JoinedRoom,
+  AskToJoinRoom,
+}
+
 export default function Home() {
-  const [latestMessage, setLatestMessage] = useState<string>("");
+  const [currentWindowType, setCurrentWindowType] = useState<CurrentWindowType>(
+    CurrentWindowType.Welcome
+  );
   const [currentRoom, setCurrentRoom] = useState<string>("");
 
-  const handleSendMessage = () => {
-    if (latestMessage !== "" && websocket !== null) {
-      const message_event = {
-        entity: "room",
-        action: "message",
-        username: userUUID,
-        entity_data: {
-          room_uuid: currentRoom,
-          message: latestMessage,
-        },
-      };
-      websocket.send(JSON.stringify(message_event));
-      setLatestMessage("");
-    }
-  };
-  const [openChat, setOpenChat] = useState(false);
-  const handleOpenChat = () => {
-    setOpenChat(true);
-  };
-  const handleCloseChat = () => {
-    setOpenChat(false);
-  };
   const userUUID = useMemo(() => uuidv4(), []);
   const initEvent = useMemo(() => {
     return {
@@ -86,31 +69,15 @@ export default function Home() {
     };
   }, [userUUID]);
 
-  console.log(initEvent);
   const { websocket, receivedData } = useWebSocket(
     "ws://localhost:8000/",
     initEvent
   );
 
-  const handleClick = () => {
-    if (websocket !== null) {
-      const event = {
-        entity: "room",
-        action: "create",
-        username: userUUID,
-        entity_data: {
-          name: `Test Room ${Math.floor(Math.random() * 100)}`,
-          description: "Test Room description",
-        },
-      };
-      websocket.send(JSON.stringify(event));
-    }
-  };
-
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
   const [joinedRooms, setJoinedRooms] = useState<Room[]>([]);
 
-  const [roomChat, setRoomChat] = useState(new Map<string, Message[]>());
+  const [roomChat, setRoomChat] = useState<Map<string, Set<Message>>>();
 
   const [availableRoomsOpen, setAvailableRoomsOpen] = useState<boolean>(true);
   const [joinedRoomsOpen, setJoinedRoomsOpen] = useState<boolean>(true);
@@ -130,28 +97,29 @@ export default function Home() {
       receivedData.result === "success"
     ) {
       if (receivedData.entity_data !== null) {
-        if (receivedData.entity_data.joined !== null) {
+        if (!!receivedData.entity_data.joined) {
           setJoinedRooms(receivedData.entity_data.joined);
         }
-        if (receivedData.entity_data.available !== null) {
+        if (!!receivedData.entity_data.available) {
           setAvailableRooms(receivedData.entity_data.available);
         }
       }
-      // if (
-      //   receivedData.action === "message" &&
-      //   receivedData.result === "success"
-      // ) {
-      //   if (receivedData.entity_data !== null) {
-      //     const { room_uuid, message } = receivedData.entity_data;
-      //     setRoomChat((prev) => {
-      //       const newMap = new Map(prev);
-      //       const currentMessages = newMap.get(room_uuid) || [];
-      //       currentMessages.push(message);
-      //       newMap.set(room_uuid, currentMessages);
-      //       return newMap;
-      //     });
-      //   }
-      // }
+      if (
+        receivedData.action === "message" &&
+        receivedData.result === "success"
+      ) {
+        if (receivedData.entity_data !== null) {
+          const { room_uuid, message } = receivedData.entity_data;
+          setRoomChat((prev) => {
+            const newMap = new Map(prev);
+            if (!newMap.has(room_uuid)) {
+              newMap.set(room_uuid, new Set<Message>());
+            }
+            newMap.get(room_uuid)?.add(message);
+            return newMap;
+          });
+        }
+      }
     }
   }, [
     receivedData,
@@ -161,13 +129,55 @@ export default function Home() {
     receivedData?.entity_data,
   ]);
   const drawerWidth = 240;
-  console.log({ receivedData, availableRooms, joinedRooms, roomChat });
+
+  let windowComponent: ReactNode;
+
+  switch (currentWindowType) {
+    case CurrentWindowType.NewRoom:
+      windowComponent = (
+        <NewRoom websocket={websocket} userUUID={userUUID}></NewRoom>
+      );
+      break;
+    case CurrentWindowType.JoinedRoom:
+      windowComponent = (
+        <ChatRoom
+          websocket={websocket}
+          userUUID={userUUID}
+          roomUUID={currentRoom}
+          messages={roomChat?.get(currentRoom) || new Set<Message>()}
+        ></ChatRoom>
+      );
+      break;
+    case CurrentWindowType.AskToJoinRoom:
+      windowComponent = (
+        <AskToJoin
+          websocket={websocket}
+          userUUID={userUUID}
+          roomUUID={currentRoom}
+          handleCurrentWindowState={(windowState: CurrentWindowType) =>
+            setCurrentWindowType(windowState)
+          }
+          handleSetCurrentRoom={(roomUUID: string) => setCurrentRoom(roomUUID)}
+        ></AskToJoin>
+      );
+      break;
+    case CurrentWindowType.Welcome:
+      windowComponent = <Typography paragraph>Welcome page</Typography>;
+      break;
+    default:
+      windowComponent = <Typography paragraph>Welcome page</Typography>;
+      break;
+  }
+
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", height: "100vh", width: "100vw" }}>
       <CssBaseline />
       <AppBar
         position="fixed"
-        sx={{ width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px` }}
+        sx={{
+          width: `calc(100% - ${drawerWidth}px)`,
+          ml: `${drawerWidth}px`,
+        }}
       >
         <Toolbar>
           <Typography variant="h6" noWrap component="div">
@@ -198,7 +208,13 @@ export default function Home() {
             <TextField id="outlined-basic" label="Search" variant="outlined" />
           </ListItem>
           <Divider />
-          <ListItem key={"New Room"} disablePadding onClick={handleClick}>
+          <ListItem
+            key={"New Room"}
+            disablePadding
+            onClick={() => {
+              setCurrentWindowType(CurrentWindowType.NewRoom);
+            }}
+          >
             <ListItemButton>
               <ListItemIcon>
                 <AddIcon>Create a new room</AddIcon>
@@ -228,7 +244,13 @@ export default function Home() {
           >
             <List className={styles.room} component="div" disablePadding>
               {joinedRooms.map((room) => (
-                <ListItem key={room.room_uuid}>
+                <ListItem
+                  key={room.room_uuid}
+                  onClick={() => {
+                    setCurrentWindowType(CurrentWindowType.JoinedRoom);
+                    setCurrentRoom(room.room_uuid);
+                  }}
+                >
                   <ListItemButton sx={{ pl: 4 }}>
                     <ListItemIcon>
                       <GroupIcon />
@@ -261,7 +283,13 @@ export default function Home() {
           >
             <List className={styles.room} component="div" disablePadding>
               {availableRooms.map((room) => (
-                <ListItem key={room.room_uuid}>
+                <ListItem
+                  key={room.room_uuid}
+                  onClick={() => {
+                    setCurrentWindowType(CurrentWindowType.AskToJoinRoom);
+                    setCurrentRoom(room.room_uuid);
+                  }}
+                >
                   <ListItemButton sx={{ pl: 4 }}>
                     <ListItemIcon>
                       <GroupIcon />
@@ -274,125 +302,17 @@ export default function Home() {
           </Collapse>
         </List>
       </Drawer>
+      <Box
+        component="div"
+        sx={{
+          bgcolor: "background.default",
+          p: 3,
+          width: `calc(100% - ${drawerWidth}px)`,
+          display: "flex",
+        }}
+      >
+        {windowComponent}
+      </Box>
     </Box>
-    // <main className={styles.main}>
-    //   <div className={styles.roomsContainer}>
-    //     <div className={styles.createRoom}>
-    //       <button onClick={handleClick}>Create a new room</button>
-    //     </div>
-    //     <div className={styles.room}>
-    //       <p>Available Rooms</p>
-    //       <ul>
-    //         {availableRooms.map((room) => (
-    //           <div key={room.room_uuid}>
-    //             <li>{room.name}</li>
-    //             <button
-    //               onClick={() => {
-    //                 if (websocket !== null) {
-    //                   const event = {
-    //                     entity: "room",
-    //                     action: "delete",
-    //                     username: userUUID,
-    //                     entity_data: {
-    //                       room_uuid: room.room_uuid,
-    //                     },
-    //                   };
-    //                   websocket.send(JSON.stringify(event));
-    //                 }
-    //               }}
-    //             >
-    //               Delete
-    //             </button>
-    //             <button
-    //               onClick={() => {
-    //                 if (websocket !== null) {
-    //                   const event = {
-    //                     entity: "room",
-    //                     action: "join",
-    //                     username: userUUID,
-    //                     entity_data: {
-    //                       room_uuid: room.room_uuid,
-    //                     },
-    //                   };
-    //                   websocket.send(JSON.stringify(event));
-    //                 }
-    //               }}
-    //             >
-    //               Join
-    //             </button>
-    //           </div>
-    //         ))}
-    //       </ul>
-    //     </div>
-    //     <div className={styles.room}>
-    //       <p>Joined Rooms</p>
-    //       <ul>
-    //         {joinedRooms.map((room) => (
-    //           <li
-    //             key={room.room_uuid}
-    //             onClick={() => {
-    //               handleOpenChat();
-    //               setCurrentRoom(room.room_uuid);
-    //             }}
-    //           >
-    //             {room.name}
-    //           </li>
-    //         ))}
-    //       </ul>
-    //     </div>
-    //     {/* <Dialog open={openChat} onClose={handleCloseChat}>
-    //       <Box
-    //         sx={{
-    //           width: 300,
-    //           height: 200,
-    //           borderRadius: 2,
-    //           border: "2px solid grey",
-    //           padding: 1,
-    //           position: "relative",
-    //         }}
-    //         component="section"
-    //       >
-    //         {roomChat.get(currentRoom)?.map((msg) => {
-    //           console.log("msg", msg);
-    //           return (
-    //             <div key={msg.message_uuid}>
-    //               <p>{msg.sender}</p>
-    //               <p>{msg.message}</p>
-    //             </div>
-    //           );
-    //         })}
-    //         <div
-    //           style={{
-    //             width: "95%",
-    //             borderRadius: 15,
-    //             border: "1px solid grey",
-    //             position: "absolute",
-    //             bottom: 1,
-    //           }}
-    //         >
-    //           <TextField
-    //             sx={{
-    //               "& > :not(style)": { m: 1 },
-    //             }}
-    //             id="outlined-basic"
-    //             variant="outlined"
-    //             value={latestMessage}
-    //             onChange={
-    //               (event: ChangeEvent<HTMLInputElement>) =>
-    //                 setLatestMessage(event.target.value)
-    //               // handleInput(e.target.value)
-    //             }
-    //           />
-    //           <IconButton aria-label="send" onClick={handleSendMessage}>
-    //             <SendIcon />
-    //           </IconButton>
-    //         </div>
-    //       </Box>
-    //     </Dialog> */}
-    //   </div>
-    //   <div className={styles.window}>Chat window</div>
-    //   {/* <div>Search new Room?</div> */}
-    //   {/* <ChatWindow /> */}
-    // </main>
   );
 }
