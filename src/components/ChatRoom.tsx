@@ -2,7 +2,7 @@ import { Box, IconButton, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { defaultTextFieldValue } from "./NewRoom";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import { Message } from "@/app/page";
+import { Message } from "@/utilities/types";
 
 type ChatRoomProps = {
   websocket: WebSocket | null;

@@ -1,4 +1,3 @@
-import { Room } from "@/app/page";
 import { ExpandMore } from "@mui/icons-material";
 import {
   Accordion,
@@ -13,6 +12,7 @@ import {
 } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import GroupIcon from "@mui/icons-material/Group";
+import { Room } from "@/utilities/types";
 
 type RoomsListProps = {
   title: string;

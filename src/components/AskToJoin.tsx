@@ -5,13 +5,13 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { CurrentWindowType } from "@/app/page";
+import { CurrentSectionType } from "@/utilities/types";
 
 type AskToJoinProps = {
   websocket: WebSocket | null;
   userUUID: string;
   roomUUID: string;
-  handleCurrentWindowState: (windowState: CurrentWindowType) => void;
+  handleCurrentWindowState: (windowState: CurrentSectionType) => void;
   handleSetCurrentRoom: (roomUUID: string) => void;
 };
 export default function AskToJoin({
@@ -52,7 +52,7 @@ export default function AskToJoin({
           variant="outlined"
           onClick={() => {
             handleClose();
-            handleCurrentWindowState(CurrentWindowType.Welcome);
+            handleCurrentWindowState(CurrentSectionType.Welcome);
           }}
         >
           Cancel
@@ -62,7 +62,7 @@ export default function AskToJoin({
           onClick={() => {
             handleJoin();
             handleSetCurrentRoom(roomUUID);
-            handleCurrentWindowState(CurrentWindowType.JoinedRoom);
+            handleCurrentWindowState(CurrentSectionType.JoinedRoom);
           }}
         >
           Join
