@@ -1,35 +1,27 @@
 "use client";
 
-import styles from "./page.module.css";
 import { useEffect, useMemo, useState, ChangeEvent, ReactNode } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { v4 as uuidv4 } from "uuid";
 import {
-  AppBar,
   Box,
-  Collapse,
   CssBaseline,
   Divider,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
+  IconButton,
+  InputAdornment,
   TextField,
-  Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import Drawer from "@mui/material/Drawer";
-import AddIcon from "@mui/icons-material/Add";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import GroupIcon from "@mui/icons-material/Group";
 import NewRoom from "@/components/NewRoom";
 import ChatRoom from "@/components/ChatRoom";
 import AskToJoin from "@/components/AskToJoin";
-
-type Room = {
+import Header from "@/components/Header";
+import CreateOutlinedIcon from "@mui/icons-material/CreateOutlined";
+import RoomsList from "@/components/RoomList";
+import SearchIcon from "@mui/icons-material/Search";
+// types folder
+export type Room = {
   room_uuid: string;
   name: string;
   description?: string;
@@ -79,9 +71,7 @@ export default function Home() {
 
   const [roomChat, setRoomChat] = useState<Map<string, Set<Message>>>();
 
-  const [availableRoomsOpen, setAvailableRoomsOpen] = useState<boolean>(true);
-  const [joinedRoomsOpen, setJoinedRoomsOpen] = useState<boolean>(true);
-
+  // Take hook out
   useEffect(() => {
     if (
       receivedData &&
@@ -128,8 +118,9 @@ export default function Home() {
     receivedData?.result,
     receivedData?.entity_data,
   ]);
-  const drawerWidth = 240;
+  const drawerWidth = 250;
 
+  // Seaparate component
   let windowComponent: ReactNode;
 
   switch (currentWindowType) {
@@ -170,148 +161,79 @@ export default function Home() {
   }
 
   return (
-    <Box sx={{ display: "flex", height: "100vh", width: "100vw" }}>
+    <Box display="flex" flexDirection="column" width="100%" height="100vh">
       <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{
-          width: `calc(100% - ${drawerWidth}px)`,
-          ml: `${drawerWidth}px`,
-        }}
-      >
-        <Toolbar>
-          <Typography variant="h6" noWrap component="div">
-            Room Name and Details
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-            boxSizing: "border-box",
-          },
-        }}
-        variant="permanent"
-        anchor="left"
-      >
-        <Toolbar>
-          <Typography variant="h6" noWrap component="div">
-            Chats
-          </Typography>
-        </Toolbar>
-        <Divider />
-        <List>
-          <ListItem key={"Search Rooms"}>
-            <TextField id="outlined-basic" label="Search" variant="outlined" />
-          </ListItem>
-          <Divider />
-          <ListItem
-            key={"New Room"}
-            disablePadding
-            onClick={() => {
-              setCurrentWindowType(CurrentWindowType.NewRoom);
-            }}
-          >
-            <ListItemButton>
-              <ListItemIcon>
-                <AddIcon>Create a new room</AddIcon>
-              </ListItemIcon>
-              <ListItemText primary={"New Room"} />
-            </ListItemButton>
-          </ListItem>
-          <Divider />
-          <ListItem
-            key={"Joined Rooms"}
-            disablePadding
-            onClick={() => setJoinedRoomsOpen(!joinedRoomsOpen)}
-          >
-            <ListItemButton>
-              <ListItemIcon>
-                <FavoriteIcon />
-              </ListItemIcon>
-              <ListItemText primary={"Joined Rooms"} />
-              {joinedRoomsOpen ? <ExpandLess /> : <ExpandMore />}
-            </ListItemButton>
-          </ListItem>
-          <Collapse
-            style={{ maxHeight: "500px", overflowY: "scroll" }}
-            in={joinedRoomsOpen}
-            timeout="auto"
-            unmountOnExit
-          >
-            <List className={styles.room} component="div" disablePadding>
-              {joinedRooms.map((room) => (
-                <ListItem
-                  key={room.room_uuid}
-                  onClick={() => {
-                    setCurrentWindowType(CurrentWindowType.JoinedRoom);
-                    setCurrentRoom(room.room_uuid);
-                  }}
-                >
-                  <ListItemButton sx={{ pl: 4 }}>
-                    <ListItemIcon>
-                      <GroupIcon />
-                    </ListItemIcon>
-                    <ListItemText primary={room.name} />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          </Collapse>
-          <Divider />
-          <ListItem
-            key={"Available Rooms"}
-            disablePadding
-            onClick={() => setAvailableRoomsOpen(!availableRoomsOpen)}
-          >
-            <ListItemButton>
-              <ListItemIcon>
-                <EventAvailableIcon />
-              </ListItemIcon>
-              <ListItemText primary={"Available Rooms"} />
-              {availableRoomsOpen ? <ExpandLess /> : <ExpandMore />}
-            </ListItemButton>
-          </ListItem>
-          <Collapse
-            style={{ maxHeight: "500px", overflowY: "scroll" }}
-            in={availableRoomsOpen}
-            timeout="auto"
-            unmountOnExit
-          >
-            <List className={styles.room} component="div" disablePadding>
-              {availableRooms.map((room) => (
-                <ListItem
-                  key={room.room_uuid}
-                  onClick={() => {
-                    setCurrentWindowType(CurrentWindowType.AskToJoinRoom);
-                    setCurrentRoom(room.room_uuid);
-                  }}
-                >
-                  <ListItemButton sx={{ pl: 4 }}>
-                    <ListItemIcon>
-                      <GroupIcon />
-                    </ListItemIcon>
-                    <ListItemText primary={room.name} />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          </Collapse>
-        </List>
-      </Drawer>
+      <Box display="flex" flexDirection="row" alignItems="center">
+        <Box width={drawerWidth}>
+          <Header title="Chats">
+            <Tooltip title="Create New Room" arrow>
+              <IconButton
+                aria-label="create-room"
+                onClick={() => {
+                  setCurrentWindowType(CurrentWindowType.NewRoom);
+                }}
+              >
+                <CreateOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+          </Header>
+        </Box>
+        <Divider orientation="vertical" />
+        <Box flexGrow="1">
+          <Header title="Room Name and Details"></Header>
+        </Box>
+      </Box>
+      <Divider />
       <Box
-        component="div"
-        sx={{
-          bgcolor: "background.default",
-          p: 3,
-          width: `calc(100% - ${drawerWidth}px)`,
-          display: "flex",
-        }}
+        display="flex"
+        flexDirection="row"
+        flexGrow="1"
+        height="100%"
+        overflow="hidden"
       >
-        {windowComponent}
+        <Box width={drawerWidth} display="flex" flexDirection="column">
+          <Box padding="0.75rem">
+            <TextField
+              variant="outlined"
+              placeholder="Search Rooms"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            ></TextField>
+          </Box>
+          <Box
+            display="flex"
+            flexDirection="column"
+            flexGrow="1"
+            overflow="auto"
+          >
+            <Divider />
+            <RoomsList
+              title={"Joined Rooms"}
+              roomsList={joinedRooms}
+              handleRoomClick={(uuid: string) => {
+                setCurrentWindowType(CurrentWindowType.JoinedRoom);
+                setCurrentRoom(uuid);
+              }}
+            />
+            <Divider />
+            <RoomsList
+              title={"Available Rooms"}
+              roomsList={availableRooms}
+              handleRoomClick={(uuid: string) => {
+                setCurrentWindowType(CurrentWindowType.AskToJoinRoom);
+                setCurrentRoom(uuid);
+              }}
+            />
+            <Divider />
+          </Box>
+        </Box>
+        <Divider orientation="vertical" />
+        <Box flexGrow="1">{windowComponent}</Box>
       </Box>
     </Box>
   );
