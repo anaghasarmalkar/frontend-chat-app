@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, ChangeEvent, ReactNode } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -14,41 +14,19 @@ import {
   Typography,
 } from "@mui/material";
 import NewRoom from "@/components/NewRoom";
-import ChatRoom from "@/components/ChatRoom";
-import AskToJoin from "@/components/AskToJoin";
+
 import Header from "@/components/Header";
 import CreateOutlinedIcon from "@mui/icons-material/CreateOutlined";
 import RoomsList from "@/components/RoomList";
 import SearchIcon from "@mui/icons-material/Search";
-// types folder
-export type Room = {
-  room_uuid: string;
-  name: string;
-  description?: string;
-  admins: string[];
-  created_by_user: string;
-  welcome_message: string;
-  messages: any[];
-  is_deleted: boolean;
-};
-
-export type Message = {
-  message_uuid: string;
-  message: string;
-  timestamp: string;
-  sender: string;
-};
-
-export enum CurrentWindowType {
-  Welcome,
-  NewRoom,
-  JoinedRoom,
-  AskToJoinRoom,
-}
+import { CurrentSectionType, Message, Room } from "@/utilities/types";
+import ChatRoom from "@/components/ChatRoom";
+import AskToJoin from "@/components/AskToJoin";
+import { useReceivedData } from "@/hooks/useReceivedData";
 
 export default function Home() {
-  const [currentWindowType, setCurrentWindowType] = useState<CurrentWindowType>(
-    CurrentWindowType.Welcome
+  const [requestedSection, setRequestedSection] = useState<CurrentSectionType>(
+    CurrentSectionType.Welcome
   );
   const [currentRoom, setCurrentRoom] = useState<string>("");
 
@@ -66,99 +44,45 @@ export default function Home() {
     initEvent
   );
 
-  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
-  const [joinedRooms, setJoinedRooms] = useState<Room[]>([]);
+  const { availableRooms, joinedRooms, roomChat } =
+    useReceivedData(receivedData);
 
-  const [roomChat, setRoomChat] = useState<Map<string, Set<Message>>>();
-
-  // Take hook out
-  useEffect(() => {
-    if (
-      receivedData &&
-      receivedData.entity === "server" &&
-      receivedData.action === "init" &&
-      receivedData.result === "success"
-    ) {
-      console.log("Connected to server.");
-    }
-    if (
-      receivedData &&
-      receivedData.entity === "room" &&
-      receivedData.result === "success"
-    ) {
-      if (receivedData.entity_data !== null) {
-        if (!!receivedData.entity_data.joined) {
-          setJoinedRooms(receivedData.entity_data.joined);
-        }
-        if (!!receivedData.entity_data.available) {
-          setAvailableRooms(receivedData.entity_data.available);
-        }
-      }
-      if (
-        receivedData.action === "message" &&
-        receivedData.result === "success"
-      ) {
-        if (receivedData.entity_data !== null) {
-          const { room_uuid, message } = receivedData.entity_data;
-          setRoomChat((prev) => {
-            const newMap = new Map(prev);
-            if (!newMap.has(room_uuid)) {
-              newMap.set(room_uuid, new Set<Message>());
-            }
-            newMap.get(room_uuid)?.add(message);
-            return newMap;
-          });
-        }
-      }
-    }
-  }, [
-    receivedData,
-    receivedData?.entity,
-    receivedData?.action,
-    receivedData?.result,
-    receivedData?.entity_data,
-  ]);
   const drawerWidth = 250;
 
-  // Seaparate component
-  let windowComponent: ReactNode;
-
-  switch (currentWindowType) {
-    case CurrentWindowType.NewRoom:
-      windowComponent = (
-        <NewRoom websocket={websocket} userUUID={userUUID}></NewRoom>
-      );
-      break;
-    case CurrentWindowType.JoinedRoom:
-      windowComponent = (
-        <ChatRoom
-          websocket={websocket}
-          userUUID={userUUID}
-          roomUUID={currentRoom}
-          messages={roomChat?.get(currentRoom) || new Set<Message>()}
-        ></ChatRoom>
-      );
-      break;
-    case CurrentWindowType.AskToJoinRoom:
-      windowComponent = (
-        <AskToJoin
-          websocket={websocket}
-          userUUID={userUUID}
-          roomUUID={currentRoom}
-          handleCurrentWindowState={(windowState: CurrentWindowType) =>
-            setCurrentWindowType(windowState)
-          }
-          handleSetCurrentRoom={(roomUUID: string) => setCurrentRoom(roomUUID)}
-        ></AskToJoin>
-      );
-      break;
-    case CurrentWindowType.Welcome:
-      windowComponent = <Typography paragraph>Welcome page</Typography>;
-      break;
-    default:
-      windowComponent = <Typography paragraph>Welcome page</Typography>;
-      break;
-  }
+  // Its annoying to separate component and send data as props. too many props
+  const ResultComponent = useCallback(() => {
+    switch (requestedSection) {
+      case CurrentSectionType.NewRoom:
+        return <NewRoom websocket={websocket} userUUID={userUUID} />;
+      case CurrentSectionType.JoinedRoom:
+        return (
+          <ChatRoom
+            websocket={websocket}
+            userUUID={userUUID}
+            roomUUID={currentRoom}
+            messages={roomChat?.get(currentRoom) || new Set<Message>()}
+          />
+        );
+      case CurrentSectionType.AskToJoinRoom:
+        return (
+          <AskToJoin
+            websocket={websocket}
+            userUUID={userUUID}
+            roomUUID={currentRoom}
+            handleCurrentWindowState={(windowState: CurrentSectionType) =>
+              setRequestedSection(windowState)
+            }
+            handleSetCurrentRoom={(roomUUID: string) =>
+              setCurrentRoom(roomUUID)
+            }
+          />
+        );
+      case CurrentSectionType.Welcome:
+        return <Typography paragraph>Welcome page</Typography>;
+      default:
+        return <Typography paragraph>Welcome page</Typography>;
+    }
+  }, [currentRoom, requestedSection, roomChat, userUUID, websocket]);
 
   return (
     <Box display="flex" flexDirection="column" width="100%" height="100vh">
@@ -170,7 +94,7 @@ export default function Home() {
               <IconButton
                 aria-label="create-room"
                 onClick={() => {
-                  setCurrentWindowType(CurrentWindowType.NewRoom);
+                  setRequestedSection(CurrentSectionType.NewRoom);
                 }}
               >
                 <CreateOutlinedIcon />
@@ -216,7 +140,7 @@ export default function Home() {
               title={"Joined Rooms"}
               roomsList={joinedRooms}
               handleRoomClick={(uuid: string) => {
-                setCurrentWindowType(CurrentWindowType.JoinedRoom);
+                setRequestedSection(CurrentSectionType.JoinedRoom);
                 setCurrentRoom(uuid);
               }}
             />
@@ -225,7 +149,7 @@ export default function Home() {
               title={"Available Rooms"}
               roomsList={availableRooms}
               handleRoomClick={(uuid: string) => {
-                setCurrentWindowType(CurrentWindowType.AskToJoinRoom);
+                setRequestedSection(CurrentSectionType.AskToJoinRoom);
                 setCurrentRoom(uuid);
               }}
             />
@@ -233,7 +157,9 @@ export default function Home() {
           </Box>
         </Box>
         <Divider orientation="vertical" />
-        <Box flexGrow="1">{windowComponent}</Box>
+        <Box flexGrow="1">
+          <ResultComponent />
+        </Box>
       </Box>
     </Box>
   );
