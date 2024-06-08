@@ -40,20 +40,70 @@ export default function ChatRoom({
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-end",
-        width: "100%",
+        height: "100%",
+        padding: "0.75rem",
       }}
     >
-      <Box sx={{ display: "flex", flexDirection: "column" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.5rem",
+          paddingBottom: "0.75rem",
+          overflowY: "scroll",
+        }}
+      >
         {Array.from(messages).map((msg) => {
-          return (
+          return msg.sender === userUUID ? (
             <Box
               key={msg.message_uuid}
-              sx={{ display: "flex", flexDirection: "column" }}
-              ml={msg.sender === userUUID ? "auto" : ""}
-              mr={msg.sender !== userUUID ? "auto" : ""}
+              sx={{
+                display: "flex",
+                backgroundColor: "#00b4d8",
+                marginLeft: "auto",
+                gap: "0.5rem",
+                alignItems: "baseline",
+                padding: "0.5rem",
+                borderRadius: "10px",
+              }}
             >
-              <Typography>{msg.sender}</Typography>
-              <Typography>{msg.message}</Typography>
+              <Typography variant="body1">{msg.message}</Typography>
+              <Typography>
+                <Box sx={{ fontSize: 11 }}>
+                  {new Date(msg.timestamp).toLocaleTimeString()}
+                </Box>
+              </Typography>
+            </Box>
+          ) : (
+            <Box
+              key={msg.message_uuid}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                backgroundColor: "#adb5bd",
+                marginRight: "auto",
+                padding: "0.5rem",
+                borderRadius: "10px",
+              }}
+            >
+              <Typography variant="body1">
+                <Box sx={{ fontWeight: "bold" }}>{msg.sender.slice(0, 5)}</Box>
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "0.5rem",
+                  alignItems: "baseline",
+                }}
+              >
+                <Typography variant="body1">{msg.message}</Typography>
+                <Typography>
+                  <Box sx={{ fontSize: 11 }}>
+                    {new Date(msg.timestamp).toLocaleTimeString()}
+                  </Box>
+                </Typography>
+              </Box>
             </Box>
           );
         })}
