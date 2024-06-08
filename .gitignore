@@ -203,3 +203,6 @@ sketch
 # .pnp.*
 
 # End of https://www.toptal.com/developers/gitignore/api/nextjs,react,node,yarn
+
+# Million Lint
+.million
