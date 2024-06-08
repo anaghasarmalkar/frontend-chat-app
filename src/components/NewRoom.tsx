@@ -66,15 +66,19 @@ export default function NewRoom({ websocket, userUUID }: NewRoomProps) {
     }
   };
   return (
+    // Maybe make this a Dialog component instead.
     <Box
       component="form"
       sx={{
         "& .MuiTextField-root": { m: 1, width: "25ch" },
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
       }}
       noValidate
       autoComplete="off"
     >
-      <div>
+      <Box component="div">
         <TextField
           required
           error={validationErrorState.name.isError}
@@ -96,8 +100,8 @@ export default function NewRoom({ websocket, userUUID }: NewRoomProps) {
             setDescription(e.target.value)
           }
         />
-      </div>
-      <div>
+      </Box>
+      <Box component="div" sx={{}}>
         <Button
           variant="outlined"
           onClick={() => {
@@ -119,7 +123,7 @@ export default function NewRoom({ websocket, userUUID }: NewRoomProps) {
         >
           Clear
         </Button>
-      </div>
+      </Box>
     </Box>
   );
 }
