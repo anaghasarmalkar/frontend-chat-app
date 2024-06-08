@@ -3,10 +3,13 @@ import { PropsWithChildren } from "react";
 
 type HeaderProps = {
   title: string;
+  description?: string;
 };
+const headerHeight = 75;
 
 export default function Header({
   title,
+  description,
   children,
 }: PropsWithChildren<HeaderProps>) {
   return (
@@ -17,10 +20,19 @@ export default function Header({
       justifyContent="space-between"
       alignItems="center"
       padding="0.75rem"
+      height={headerHeight}
     >
-      <Typography noWrap component="div">
-        {title}
-      </Typography>
+      <Box>
+        <Typography noWrap variant="h6">
+          <Box sx={{ fontWeight: "bold" }}>{title}</Box>
+        </Typography>
+        {description && (
+          <Typography noWrap variant="subtitle2">
+            {description}
+          </Typography>
+        )}
+      </Box>
+
       {children}
     </Box>
   );
