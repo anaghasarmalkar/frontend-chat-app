@@ -9,15 +9,16 @@ import {
   ListItemIcon,
   ListItemText,
   SvgIconProps,
+  Typography,
 } from "@mui/material";
-import { ReactElement, useEffect, useState } from "react";
+import { ReactElement, useCallback, useEffect, useState } from "react";
 import GroupIcon from "@mui/icons-material/Group";
 import { Room } from "@/utilities/types";
 
 type RoomsListProps = {
   title: string;
   roomsList: Room[];
-  handleRoomClick: (uuid: string) => void;
+  handleRoomClick: (room: Room) => void;
   roomIcon?: ReactElement<SvgIconProps>;
 };
 
@@ -36,12 +37,16 @@ export default function RoomsList({
     }
   }, [roomsList]);
 
+  const handleChange = useCallback(() => {
+    setExpanded((prev) => !prev);
+  }, []);
+
   return (
     <Accordion
       disableGutters
       square
       expanded={expanded}
-      onChange={() => setExpanded(!expanded)}
+      onChange={handleChange}
       sx={{ boxShadow: "none" }}
     >
       <AccordionSummary
@@ -53,31 +58,25 @@ export default function RoomsList({
           flexDirection: "row-reverse",
         }}
       >
-        {title}
+        <Typography sx={{ marginLeft: "1rem" }}>{title}</Typography>
       </AccordionSummary>
       <AccordionDetails>
         <List component="ul" disablePadding>
           {roomsList.map((room) => (
-            <ListItem
-              key={room.room_uuid}
-              component="li"
-              onClick={() => {
-                handleRoomClick(room.room_uuid);
-              }}
-            >
+            <ListItem key={room.room_uuid} component="li">
               <ListItemButton
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
+                onClick={() => {
+                  handleRoomClick(room);
                 }}
               >
                 {roomIcon ? (
-                  <ListItemIcon>{roomIcon}</ListItemIcon>
+                  <ListItemIcon style={{ minWidth: "40px" }}>
+                    {roomIcon}
+                  </ListItemIcon>
                 ) : (
                   <GroupIcon />
                 )}
-
-                <ListItemText primary={room.name} />
+                <ListItemText primary={room.name} sx={{ marginLeft: "1rem" }} />
               </ListItemButton>
             </ListItem>
           ))}
