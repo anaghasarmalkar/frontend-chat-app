@@ -1,8 +1,9 @@
 import { Box, IconButton, TextField, Typography } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { defaultTextFieldValue } from "./NewRoom";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { Message } from "@/utilities/types";
+import MessageBox from "./MessageBox";
 
 type ChatRoomProps = {
   websocket: WebSocket | null;
@@ -16,6 +17,12 @@ export default function ChatRoom({
   roomUUID,
   messages,
 }: ChatRoomProps) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (scrollRef && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
   const [inputMessage, setInputMessage] = useState<string>(
     defaultTextFieldValue
   );
@@ -45,6 +52,7 @@ export default function ChatRoom({
       }}
     >
       <Box
+        ref={scrollRef}
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -58,21 +66,14 @@ export default function ChatRoom({
             <Box
               key={msg.message_uuid}
               sx={{
-                display: "flex",
                 backgroundColor: "#00b4d8",
                 marginLeft: "auto",
-                gap: "0.5rem",
-                alignItems: "baseline",
                 padding: "0.5rem",
                 borderRadius: "10px",
+                maxWidth: "70%",
               }}
             >
-              <Typography variant="body1">{msg.message}</Typography>
-              <Typography>
-                <Box sx={{ fontSize: 11 }}>
-                  {new Date(msg.timestamp).toLocaleTimeString()}
-                </Box>
-              </Typography>
+              <MessageBox message={msg.message} timestamp={msg.timestamp} />
             </Box>
           ) : (
             <Box
@@ -84,32 +85,20 @@ export default function ChatRoom({
                 marginRight: "auto",
                 padding: "0.5rem",
                 borderRadius: "10px",
+                maxWidth: "70%",
               }}
             >
               <Typography variant="body1">
                 <Box sx={{ fontWeight: "bold" }}>{msg.sender.slice(0, 5)}</Box>
               </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                  gap: "0.5rem",
-                  alignItems: "baseline",
-                }}
-              >
-                <Typography variant="body1">{msg.message}</Typography>
-                <Typography>
-                  <Box sx={{ fontSize: 11 }}>
-                    {new Date(msg.timestamp).toLocaleTimeString()}
-                  </Box>
-                </Typography>
-              </Box>
+              <MessageBox message={msg.message} timestamp={msg.timestamp} />
             </Box>
           );
         })}
       </Box>
       <Box sx={{ display: "flex", width: "100%" }}>
         <TextField
+          autoFocus
           value={inputMessage}
           fullWidth
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
