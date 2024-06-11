@@ -128,12 +128,11 @@ export default function Home() {
     websocket,
   ]);
 
-  console.log(currentRoom);
   return (
     <Box display="flex" flexDirection="column" width="100%" height="100vh">
       <CssBaseline />
       <Box display="flex" flexDirection="row" alignItems="center">
-        <Box width={drawerWidth}>
+        <Box width={drawerWidth} minWidth={drawerWidth}>
           <Header title="Chats">
             <Tooltip title="Create New Room" arrow>
               <IconButton
@@ -181,7 +180,12 @@ export default function Home() {
         height="100%"
         overflow="hidden"
       >
-        <Box width={drawerWidth} display="flex" flexDirection="column">
+        <Box
+          width={drawerWidth}
+          minWidth={drawerWidth}
+          display="flex"
+          flexDirection="column"
+        >
           <Box padding="0.75rem">
             <TextField
               variant="outlined"

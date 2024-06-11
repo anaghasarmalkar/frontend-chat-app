@@ -1,5 +1,5 @@
 import { Box, IconButton, TextField, Typography } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { defaultTextFieldValue } from "./NewRoom";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { Message } from "@/utilities/types";
@@ -16,6 +16,12 @@ export default function ChatRoom({
   roomUUID,
   messages,
 }: ChatRoomProps) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (scrollRef && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
   const [inputMessage, setInputMessage] = useState<string>(
     defaultTextFieldValue
   );
@@ -45,6 +51,7 @@ export default function ChatRoom({
       }}
     >
       <Box
+        ref={scrollRef}
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -65,6 +72,7 @@ export default function ChatRoom({
                 alignItems: "baseline",
                 padding: "0.5rem",
                 borderRadius: "10px",
+                maxWidth: "70%",
               }}
             >
               <Typography variant="body1">{msg.message}</Typography>
@@ -84,6 +92,7 @@ export default function ChatRoom({
                 marginRight: "auto",
                 padding: "0.5rem",
                 borderRadius: "10px",
+                maxWidth: "70%",
               }}
             >
               <Typography variant="body1">
@@ -110,6 +119,7 @@ export default function ChatRoom({
       </Box>
       <Box sx={{ display: "flex", width: "100%" }}>
         <TextField
+          autoFocus
           value={inputMessage}
           fullWidth
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
