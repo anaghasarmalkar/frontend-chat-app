@@ -4,7 +4,6 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import { CurrentSectionType, Room } from "@/utilities/types";
 import { useCallback } from "react";
 
@@ -48,11 +47,10 @@ export default function AskToJoin({
 
   return (
     <Dialog onClose={handleClose} open={open}>
-      <DialogTitle>Join Room</DialogTitle>
       <DialogContent>
-        <DialogContentText>Do you want to join this room?</DialogContentText>
+        <DialogContentText>Do you want to join {room.name}?</DialogContentText>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ display: "flex", alignItems: "center" }}>
         <Button
           variant="outlined"
           onClick={() => {
