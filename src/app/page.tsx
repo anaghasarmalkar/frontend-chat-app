@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -24,8 +24,22 @@ import ChatRoom from "@/components/ChatRoom";
 import AskToJoin from "@/components/AskToJoin";
 import { useReceivedData } from "@/hooks/useReceivedData";
 import GroupRemoveIcon from "@mui/icons-material/GroupRemove";
+import { useRouter } from "next/navigation";
+import Loader from "@/components/Loader";
+
 const drawerWidth = 250;
+
 export default function Home() {
+  const router = useRouter();
+  const [token, setToken] = useState<string>("");
+
+  useEffect(() => {
+    const access_token = localStorage.getItem("token");
+    if (access_token !== null && access_token !== "") {
+      setToken(access_token);
+    }
+    // router.push("/login");
+  }, [router, token]);
   const [requestedSection, setRequestedSection] = useState<CurrentSectionType>(
     CurrentSectionType.Welcome
   );
@@ -131,100 +145,106 @@ export default function Home() {
   return (
     <Box display="flex" flexDirection="column" width="100%" height="100vh">
       <CssBaseline />
-      <Box display="flex" flexDirection="row" alignItems="center">
-        <Box width={drawerWidth} minWidth={drawerWidth}>
-          <Header title="Chats">
-            <Tooltip title="Create New Room" arrow>
-              <IconButton
-                aria-label="create-room"
-                onClick={() => {
-                  setRequestedSection(CurrentSectionType.NewRoom);
-                }}
-              >
-                <CreateOutlinedIcon />
-              </IconButton>
-            </Tooltip>
-          </Header>
-          <Divider />
-        </Box>
-        <Divider orientation="vertical" />
-        {currentRoom && (
-          <Box flexGrow="1" sx={{ width: `calc(100% - ${drawerWidth}px)` }}>
-            {/* Default can be last accessed room/latest chat */}
-            <Header
-              title={currentRoom.name}
-              description={currentRoom.description}
-            >
-              <Tooltip title="Leave group" arrow>
-                <IconButton
-                  aria-label="leave-group"
-                  onClick={() => {
-                    // send message "leave" to websocket
-                    // Remove from joined rooms list / or that will update when server sends response for leave
-                    handleClearRoom();
-                  }}
+      {token !== "" ? (
+        <>
+          <Box display="flex" flexDirection="row" alignItems="center">
+            <Box width={drawerWidth} minWidth={drawerWidth}>
+              <Header title="Chats">
+                <Tooltip title="Create New Room" arrow>
+                  <IconButton
+                    aria-label="create-room"
+                    onClick={() => {
+                      setRequestedSection(CurrentSectionType.NewRoom);
+                    }}
+                  >
+                    <CreateOutlinedIcon />
+                  </IconButton>
+                </Tooltip>
+              </Header>
+              <Divider />
+            </Box>
+            <Divider orientation="vertical" />
+            {currentRoom && (
+              <Box flexGrow="1" sx={{ width: `calc(100% - ${drawerWidth}px)` }}>
+                {/* Default can be last accessed room/latest chat */}
+                <Header
+                  title={currentRoom.name}
+                  description={currentRoom.description}
                 >
-                  <GroupRemoveIcon />
-                </IconButton>
-              </Tooltip>
-            </Header>
-            <Divider />
+                  <Tooltip title="Leave group" arrow>
+                    <IconButton
+                      aria-label="leave-group"
+                      onClick={() => {
+                        // send message "leave" to websocket
+                        // Remove from joined rooms list / or that will update when server sends response for leave
+                        handleClearRoom();
+                      }}
+                    >
+                      <GroupRemoveIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Header>
+                <Divider />
+              </Box>
+            )}
           </Box>
-        )}
-      </Box>
 
-      <Box
-        display="flex"
-        flexDirection="row"
-        flexGrow="1"
-        height="100%"
-        overflow="hidden"
-      >
-        <Box
-          width={drawerWidth}
-          minWidth={drawerWidth}
-          display="flex"
-          flexDirection="column"
-        >
-          <Box padding="0.75rem">
-            <TextField
-              variant="outlined"
-              placeholder="Search Rooms"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            ></TextField>
-          </Box>
           <Box
             display="flex"
-            flexDirection="column"
+            flexDirection="row"
             flexGrow="1"
-            overflow="auto"
+            height="100%"
+            overflow="hidden"
           >
-            <Divider />
-            <RoomsList
-              title={"Joined Rooms"}
-              roomsList={joinedRooms}
-              handleRoomClick={handleJoinedRoomClick}
-            />
-            <Divider />
-            <RoomsList
-              title={"Available Rooms"}
-              roomsList={availableRooms}
-              handleRoomClick={handleAvailableRoomClick}
-            />
-            <Divider />
+            <Box
+              width={drawerWidth}
+              minWidth={drawerWidth}
+              display="flex"
+              flexDirection="column"
+            >
+              <Box padding="0.75rem">
+                <TextField
+                  variant="outlined"
+                  placeholder="Search Rooms"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                ></TextField>
+              </Box>
+              <Box
+                display="flex"
+                flexDirection="column"
+                flexGrow="1"
+                overflow="auto"
+              >
+                <Divider />
+                <RoomsList
+                  title={"Joined Rooms"}
+                  roomsList={joinedRooms}
+                  handleRoomClick={handleJoinedRoomClick}
+                />
+                <Divider />
+                <RoomsList
+                  title={"Available Rooms"}
+                  roomsList={availableRooms}
+                  handleRoomClick={handleAvailableRoomClick}
+                />
+                <Divider />
+              </Box>
+            </Box>
+            <Divider orientation="vertical" />
+            <Box flexGrow="1" sx={{ width: `calc(100% - ${drawerWidth}px)` }}>
+              <ResultComponent />
+            </Box>
           </Box>
-        </Box>
-        <Divider orientation="vertical" />
-        <Box flexGrow="1" sx={{ width: `calc(100% - ${drawerWidth}px)` }}>
-          <ResultComponent />
-        </Box>
-      </Box>
+        </>
+      ) : (
+        <Loader label="Authenticating..." />
+      )}
     </Box>
   );
 }
