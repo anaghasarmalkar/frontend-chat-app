@@ -7,6 +7,7 @@ import {
   CardActions,
   CardContent,
   CardHeader,
+  Divider,
   TextField,
   Typography,
 } from "@mui/material";
@@ -91,23 +92,24 @@ export default function Page() {
       }}
     >
       <Card raised sx={{ maxWidth: 400 }}>
+        <CardHeader
+          disableTypography
+          title={
+            <Typography noWrap variant="h5" align="center">
+              <Box sx={{ fontWeight: "bold" }}>Sign Up</Box>
+            </Typography>
+          }
+          subheader={
+            <Typography noWrap align="center">
+              Already have an account?{" "}
+              <Link style={{ color: "#4287f5" }} href="/login">
+                Log In
+              </Link>
+            </Typography>
+          }
+        />
+        <Divider />
         <CardContent>
-          <CardHeader
-            disableTypography
-            title={
-              <Typography noWrap variant="h5" align="center">
-                <Box sx={{ fontWeight: "bold" }}>Sign Up</Box>
-              </Typography>
-            }
-            subheader={
-              <Typography noWrap align="center">
-                Already have an account?{" "}
-                <Link style={{ color: "#4287f5" }} href="/login">
-                  Log In
-                </Link>
-              </Typography>
-            }
-          />
           <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
             <Box
               sx={{
@@ -154,9 +156,14 @@ export default function Page() {
                 Clear
               </Button>
             </CardActions>
-            {errors.length !== 0 && <Errors messages={errors} />}
           </form>
         </CardContent>
+        {errors.length !== 0 && (
+          <>
+            <Divider />
+            <Errors messages={errors} />
+          </>
+        )}
       </Card>
     </Box>
   );
