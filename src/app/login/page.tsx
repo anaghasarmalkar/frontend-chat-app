@@ -4,7 +4,18 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  Divider,
+  Link,
+  Paper,
+  Typography,
+} from "@mui/material";
+import Errors from "../signup/errors";
 
 type FieldValidationErrorState = {
   isError: boolean;
@@ -26,31 +37,41 @@ const initialValidationErrorState: ValidationErrorState = {
 
 export default function Page() {
   const router = useRouter();
+  const queryParam = useSearchParams();
+
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [loginErrors, setLoginErrors] = useState<string>("");
+  const [errors, setErrors] = useState<string[]>([]);
   const [validationErrorState, setValidationErrorState] =
     useState<ValidationErrorState>(initialValidationErrorState);
 
   async function handleLogin() {
-    const response = await fetch("http://127.0.0.1:5000/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username,
-        password,
-      }),
-    });
-
-    switch (response.status) {
-      case 200:
-        router.push("/");
-        break;
-      default:
-        setUsername("");
-        setPassword("");
-        setLoginErrors("Invalid login credentials.");
-        router.push("/login");
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("password", password);
+    try {
+      const response = await fetch("http://0.0.0.0:8081/auth/token", {
+        method: "POST",
+        body: formData,
+      });
+      switch (response.status) {
+        case 200:
+          const data = await response.json();
+          const token = data.access_token;
+          localStorage.setItem("token", token);
+          router.push("/");
+          break;
+        default:
+          setUsername("");
+          setPassword("");
+          setErrors(["Invalid login credentials."]);
+          router.push("/login");
+          break;
+      }
+    } catch (error) {
+      setErrors([
+        "An error occurred while logging in. Please refresh the page and try again.",
+      ]);
     }
   }
 
@@ -96,65 +117,117 @@ export default function Page() {
   const handleClear = () => {
     setUsername("");
     setPassword("");
-    setLoginErrors("");
+    setErrors([]);
   };
   return (
     <Box
       component="form"
+      noValidate
+      autoComplete="off"
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      width="100%"
+      height="100vh"
       sx={{
         "& .MuiTextField-root": { m: 1, width: "25ch" },
       }}
-      noValidate
-      autoComplete="off"
     >
-      <div>
-        <TextField
-          required
-          id="username-outlined-required"
-          label="Username"
-          value={username}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setUsername(e.target.value);
-          }}
-          helperText={validationErrorState.username.displayMsg}
-          error={validationErrorState.username.isError}
+      <Card raised sx={{ maxWidth: 400 }}>
+        <CardHeader
+          disableTypography
+          title={
+            <Typography noWrap variant="h5" align="center">
+              <Box sx={{ fontWeight: "bold" }}>Log In</Box>
+            </Typography>
+          }
+          subheader={
+            <Typography noWrap align="center">
+              Don&apos;t have an account?{" "}
+              <Link style={{ textDecoration: "none" }} href="/signup">
+                Sign Up
+              </Link>
+            </Typography>
+          }
         />
-        <TextField
-          required
-          id="outlined-password-input"
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setPassword(e.target.value);
-          }}
-          helperText={validationErrorState.password.displayMsg}
-          error={validationErrorState.password.isError}
-        />
-      </div>
-      {loginErrors !== "" && (
-        <Box component="div" sx={{ color: "red" }}>
-          {loginErrors}
-        </Box>
-      )}
-      <div>
-        <Button
-          variant="outlined"
-          onClick={() => {
-            if (handleValidation()) {
-              handleLogin();
-              setUsername("");
-              setPassword("");
-              setLoginErrors("");
-            }
-          }}
+        <Divider />
+        <CardContent>
+          {queryParam.get("user_created") && (
+            <Paper
+              variant="outlined"
+              sx={{
+                margin: "0.5rem",
+                padding: "0.75rem",
+                color: "rgb(30, 70, 32)",
+                backgroundColor: "rgb(237, 247, 237)",
+              }}
+            >
+              <Typography align="center">
+                Your account was created successfully.
+              </Typography>
+              <Typography align="center">Please login to continue.</Typography>
+            </Paper>
+          )}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <TextField
+              required
+              id="email-outlined-required"
+              label="Email"
+              value={username}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setUsername(e.target.value);
+              }}
+              helperText={validationErrorState.username.displayMsg}
+              error={validationErrorState.username.isError}
+            />
+            <TextField
+              required
+              id="outlined-password-input"
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setPassword(e.target.value);
+              }}
+              helperText={validationErrorState.password.displayMsg}
+              error={validationErrorState.password.isError}
+            />
+          </Box>
+        </CardContent>
+        {errors.length !== 0 && (
+          <>
+            <Divider />
+            <Errors messages={errors} />
+          </>
+        )}
+        <CardActions
+          sx={{ display: "flex", justifyContent: "center", padding: "16px" }}
         >
-          Log In
-        </Button>
-        <Button variant="outlined" onClick={handleClear}>
-          Clear
-        </Button>
-      </div>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => {
+              if (handleValidation()) {
+                handleLogin();
+                setUsername("");
+                setPassword("");
+              }
+              setErrors([]);
+            }}
+          >
+            Log In
+          </Button>
+          <Button variant="contained" color="error" onClick={handleClear}>
+            Clear
+          </Button>
+        </CardActions>
+      </Card>
     </Box>
   );
 }

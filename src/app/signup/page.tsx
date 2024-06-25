@@ -109,8 +109,9 @@ export default function Page() {
           }
         />
         <Divider />
-        <CardContent>
-          <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
+
+        <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
+          <CardContent>
             <Box
               sx={{
                 display: "flex",
@@ -142,22 +143,28 @@ export default function Page() {
                 helperText={formik.touched.password && formik.errors.password}
               />
             </Box>
+          </CardContent>
+          <CardActions
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              paddingBottom: "16px",
+            }}
+          >
+            <Button
+              variant="contained"
+              type="submit"
+              color="success"
+              disabled={formik.isSubmitting}
+            >
+              Sign Up
+            </Button>
+            <Button variant="contained" type="reset" color="error">
+              Clear
+            </Button>
+          </CardActions>
+        </form>
 
-            <CardActions sx={{ display: "flex", justifyContent: "center" }}>
-              <Button
-                variant="contained"
-                type="submit"
-                color="success"
-                disabled={formik.isSubmitting}
-              >
-                Sign Up
-              </Button>
-              <Button variant="contained" type="reset" color="error">
-                Clear
-              </Button>
-            </CardActions>
-          </form>
-        </CardContent>
         {errors.length !== 0 && (
           <>
             <Divider />
