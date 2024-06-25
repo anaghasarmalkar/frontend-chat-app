@@ -1,7 +1,14 @@
 "use client";
 
-import { Box, Typography } from "@mui/material";
-
+import {
+  Box,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+} from "@mui/material";
+import CircleIcon from "@mui/icons-material/Circle";
 export type ErrorsProps = {
   title?: string;
   messages: string[];
@@ -12,15 +19,22 @@ export default function Errors({
   messages,
 }: ErrorsProps) {
   return (
-    <Box component="div">
+    <Box
+      component="div"
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
       <Typography>{title}</Typography>
-      <ul>
+      <List sx={{ color: "red" }}>
         {messages.map((err: string, idx: number) => (
-          <li key={idx}>
-            <Typography>{err}</Typography>
-          </li>
+          <ListItem key={idx}>
+            <Typography align="center">{err}</Typography>
+          </ListItem>
         ))}
-      </ul>
+      </List>
     </Box>
   );
 }

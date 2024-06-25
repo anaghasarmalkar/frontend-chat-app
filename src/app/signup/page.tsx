@@ -1,12 +1,22 @@
 "use client";
 
-import { Box, Button, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  TextField,
+  Typography,
+} from "@mui/material";
 import * as yup from "yup";
 import { useFormik } from "formik";
 import Loader from "@/components/Loader";
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Errors from "./errors";
+import Link from "next/link";
 
 const validationSchema = yup.object({
   email: yup
@@ -30,7 +40,6 @@ export default function Page() {
     },
     validationSchema: validationSchema,
     onSubmit: async (values) => {
-      console.log(values);
       try {
         const response = await fetch("http://0.0.0.0:8081/user/signup", {
           method: "POST",
@@ -73,51 +82,82 @@ export default function Page() {
   ) : (
     <Box
       display="flex"
-      flexDirection="column"
+      justifyContent="center"
       alignItems="center"
+      width="100%"
+      height="100vh"
       sx={{
         "& .MuiTextField-root": { m: 1, width: "25ch" },
       }}
     >
-      <Typography noWrap variant="h5">
-        <Box sx={{ fontWeight: "bold" }}>Sign Up</Box>
-      </Typography>
-      {errors.length !== 0 && <Errors messages={errors} />}
-      <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
-        <TextField
-          required
-          id="email"
-          label="Email"
-          value={formik.values.email}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          error={formik.touched.email && Boolean(formik.errors.email)}
-          helperText={formik.touched.email && formik.errors.email}
-        />
-        <TextField
-          required
-          id="password"
-          label="Password"
-          type="password"
-          value={formik.values.password}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          error={formik.touched.password && Boolean(formik.errors.password)}
-          helperText={formik.touched.password && formik.errors.password}
-        />
-        <div>
-          <Button
-            variant="outlined"
-            type="submit"
-            disabled={formik.isSubmitting}
-          >
-            Sign Up
-          </Button>
-          <Button variant="outlined" type="reset">
-            Clear
-          </Button>
-        </div>
-      </form>
+      <Card raised sx={{ maxWidth: 400 }}>
+        <CardContent>
+          <CardHeader
+            disableTypography
+            title={
+              <Typography noWrap variant="h5" align="center">
+                <Box sx={{ fontWeight: "bold" }}>Sign Up</Box>
+              </Typography>
+            }
+            subheader={
+              <Typography noWrap align="center">
+                Already have an account?{" "}
+                <Link style={{ color: "#4287f5" }} href="/login">
+                  Log In
+                </Link>
+              </Typography>
+            }
+          />
+          <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <TextField
+                required
+                id="email"
+                label="Email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.email && Boolean(formik.errors.email)}
+                helperText={formik.touched.email && formik.errors.email}
+              />
+              <TextField
+                required
+                id="password"
+                label="Password"
+                type="password"
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.password && Boolean(formik.errors.password)
+                }
+                helperText={formik.touched.password && formik.errors.password}
+              />
+            </Box>
+
+            <CardActions sx={{ display: "flex", justifyContent: "center" }}>
+              <Button
+                variant="contained"
+                type="submit"
+                color="success"
+                disabled={formik.isSubmitting}
+              >
+                Sign Up
+              </Button>
+              <Button variant="contained" type="reset" color="error">
+                Clear
+              </Button>
+            </CardActions>
+            {errors.length !== 0 && <Errors messages={errors} />}
+          </form>
+        </CardContent>
+      </Card>
     </Box>
   );
 }
