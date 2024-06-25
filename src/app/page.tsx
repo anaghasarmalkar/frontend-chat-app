@@ -38,7 +38,7 @@ export default function Home() {
     if (access_token !== null && access_token !== "") {
       setToken(access_token);
     }
-    // router.push("/login");
+    router.push("/login");
   }, [router, token]);
   const [requestedSection, setRequestedSection] = useState<CurrentSectionType>(
     CurrentSectionType.Welcome
