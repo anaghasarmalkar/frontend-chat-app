@@ -25,6 +25,7 @@ export default function Errors({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        padding: "16px",
       }}
     >
       <Typography>{title}</Typography>
