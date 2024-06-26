@@ -72,7 +72,7 @@ export default function Page() {
       } catch (error) {
         // for errors pertaining to connecting with the backend (eg internet fails)
         setErrors([
-          "An error occurred when submitting the form. Please refresh the page and try again.",
+          "An error occurred when signing in. Please refresh the page and try again.",
         ]);
       }
     },

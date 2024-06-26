@@ -50,7 +50,7 @@ export default function Page() {
     formData.append("username", username);
     formData.append("password", password);
     try {
-      const response = await fetch("http://0.0.0.0:8081/auth/token", {
+      const response = await fetch("http://0.0.0.0:8081/token", {
         method: "POST",
         body: formData,
       });

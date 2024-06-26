@@ -4,6 +4,7 @@ import { useMemo, useState, useCallback, useEffect } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { v4 as uuidv4 } from "uuid";
 import {
+  Avatar,
   Box,
   CssBaseline,
   Divider,
@@ -26,10 +27,12 @@ import { useReceivedData } from "@/hooks/useReceivedData";
 import GroupRemoveIcon from "@mui/icons-material/GroupRemove";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/Loader";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const drawerWidth = 250;
 
 export default function Home() {
+  const name = `${"Test Name".split(" ")[0][0]}${"Test Name".split(" ")[1][0]}`;
   const router = useRouter();
   const [token, setToken] = useState<string>("");
 
@@ -37,8 +40,9 @@ export default function Home() {
     const access_token = localStorage.getItem("token");
     if (access_token !== null && access_token !== "") {
       setToken(access_token);
+    } else {
+      router.push("/login");
     }
-    router.push("/login");
   }, [router, token]);
   const [requestedSection, setRequestedSection] = useState<CurrentSectionType>(
     CurrentSectionType.Welcome
@@ -78,6 +82,30 @@ export default function Home() {
     setRequestedSection(CurrentSectionType.AskToJoinRoom);
     setCurrentRoom(room);
   }, []);
+
+  async function handleLogout() {
+    try {
+      const response = await fetch("http://0.0.0.0:8081/token/revoke", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      switch (response.status) {
+        case 200:
+          localStorage.removeItem("token");
+          setToken("");
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      // How to show an alert when POST fails? Because browser makes OPTIONS request and that fails so POST is never called and we dont reach here
+      console.error(error);
+    }
+  }
 
   // Its annoying to separate component and send data as props. too many props
   const ResultComponent = useCallback(() => {
@@ -188,7 +216,6 @@ export default function Home() {
               </Box>
             )}
           </Box>
-
           <Box
             display="flex"
             flexDirection="row"
@@ -234,6 +261,22 @@ export default function Home() {
                   handleRoomClick={handleAvailableRoomClick}
                 />
                 <Divider />
+              </Box>
+              <Box
+                padding="0.75rem"
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Avatar alt="" src="">
+                  {name}
+                </Avatar>
+                <Typography>Test Name</Typography>
+                <Tooltip title="Log out" arrow>
+                  <IconButton aria-label="log-out" onClick={handleLogout}>
+                    <LogoutIcon />
+                  </IconButton>
+                </Tooltip>
               </Box>
             </Box>
             <Divider orientation="vertical" />
