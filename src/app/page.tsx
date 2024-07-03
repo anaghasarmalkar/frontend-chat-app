@@ -37,13 +37,23 @@ export default function Home() {
   const [token, setToken] = useState<string>("");
 
   useEffect(() => {
-    const access_token = localStorage.getItem("token");
-    if (access_token !== null && access_token !== "") {
-      setToken(access_token);
-    } else {
-      router.push("/login");
-    }
-  }, [router, token]);
+    const storageHandler = () => {
+      const access_token = localStorage.getItem("token");
+      if (access_token && access_token !== null && access_token !== "") {
+        setToken(access_token);
+      } else {
+        router.push("/login");
+      }
+    };
+    storageHandler();
+
+    window.addEventListener("storage", storageHandler);
+
+    return () => {
+      window.removeEventListener("storage", storageHandler);
+    };
+  }, [router]);
+
   const [requestedSection, setRequestedSection] = useState<CurrentSectionType>(
     CurrentSectionType.Welcome
   );
@@ -96,7 +106,8 @@ export default function Home() {
       switch (response.status) {
         case 200:
           localStorage.removeItem("token");
-          setToken("");
+          // A StorageEvent is sent to a window when a storage area it has access to is changed within the context of another document.
+          router.push("/login");
           break;
         default:
           break;
