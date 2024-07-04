@@ -5,7 +5,7 @@ function getAuthData() {
 }
 
 export function useAuthData() {
-  const [authToken, setAuthToken] = useState(getAuthData());
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -14,6 +14,10 @@ export function useAuthData() {
         setAuthToken(token);
       }
     };
+
+    // Set the initial value of authToken inside useeffect because we are trying to access client side variable i.e. window object which is not available on server (Next. js version 13, components are server-rendered by default)
+    // initialzing authtoken outside of useeffect works sometimes because window becomes available once browser renders which is not always the case when this hook is called.
+    handleStorage();
 
     window.addEventListener("storage", handleStorage);
 
