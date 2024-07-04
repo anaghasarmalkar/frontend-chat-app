@@ -3,7 +3,7 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import Errors from "../signup/errors";
+import { useAuthData } from "@/hooks/useAuthData";
 
 type FieldValidationErrorState = {
   isError: boolean;
@@ -37,8 +38,16 @@ const initialValidationErrorState: ValidationErrorState = {
 
 export default function Page() {
   const router = useRouter();
-  const queryParam = useSearchParams();
+  const authToken = useAuthData();
+  useEffect(() => {
+    if (authToken) {
+      if (authToken !== "") {
+        router.push("/");
+      }
+    }
+  }, [authToken, router]);
 
+  const queryParam = useSearchParams();
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errors, setErrors] = useState<string[]>([]);
