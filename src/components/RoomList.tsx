@@ -63,7 +63,7 @@ export default function RoomsList({
       <AccordionDetails>
         <List component="ul" disablePadding>
           {roomsList.map((room) => (
-            <ListItem key={room.room_uuid} component="li">
+            <ListItem key={room.id} component="li">
               <ListItemButton
                 onClick={() => {
                   handleRoomClick(room);
