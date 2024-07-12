@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { useWebSocket } from "@/hooks/useWebSocket";
+// import { useWebSocket } from "@/hooks/useWebSocket";
 import { v4 as uuidv4 } from "uuid";
 import {
   Avatar,
@@ -20,9 +20,9 @@ import Header from "@/components/Header";
 import CreateOutlinedIcon from "@mui/icons-material/CreateOutlined";
 import RoomsList from "@/components/RoomList";
 import SearchIcon from "@mui/icons-material/Search";
-import { CurrentSectionType, Message, Room } from "@/utilities/types";
-import ChatRoom from "@/components/ChatRoom";
-import AskToJoin from "@/components/AskToJoin";
+import { CurrentSectionType, Message, Room, User } from "@/utilities/types";
+// import ChatRoom from "@/components/ChatRoom";
+// import AskToJoin from "@/components/AskToJoin";
 import { useReceivedData } from "@/hooks/useReceivedData";
 import GroupRemoveIcon from "@mui/icons-material/GroupRemove";
 import { useRouter } from "next/navigation";
@@ -32,19 +32,76 @@ import LogoutIcon from "@mui/icons-material/Logout";
 const drawerWidth = 250;
 
 export default function Home() {
-  const name = `${"Test Name".split(" ")[0][0]}${"Test Name".split(" ")[1][0]}`;
+  // const name = `${"Test Name".split(" ")[0][0]}${"Test Name".split(" ")[1][0]}`;
+  const [user, setUser] = useState<User>();
   const router = useRouter();
   const [token, setToken] = useState<string>("");
 
+  const handleUserData = useCallback(async (access_token: string) => {
+    try {
+      const response = await fetch("http://0.0.0.0:8081/api/users", {
+        method: "GET",
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+
+      switch (response.status) {
+        case 200:
+          const data = await response.json();
+          setUser(data);
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      // How to show an alert when POST fails? Because browser makes OPTIONS request and that fails so POST is never called and we dont reach here
+      console.error(error);
+    }
+  }, []);
+
+  const handleTokenValidation = useCallback(
+    async (access_token: string) => {
+      try {
+        const response = await fetch("http://0.0.0.0:8081/api/token/validate", {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+
+        switch (response.status) {
+          case 401:
+            localStorage.removeItem("token");
+            router.push("/login");
+            break;
+          default:
+            break;
+        }
+      } catch (error) {
+        // How to show an alert when POST fails? Because browser makes OPTIONS request and that fails so POST is never called and we dont reach here
+        console.error(error);
+      }
+    },
+    [router]
+  );
+
   useEffect(() => {
-    const storageHandler = () => {
+    const storageHandler = async () => {
       const access_token = localStorage.getItem("token");
       if (access_token && access_token !== null && access_token !== "") {
+        // check if token is valid
+        await handleTokenValidation(access_token);
+        // TODO: Should be set after login, inside the global state
+        await handleUserData(access_token);
         setToken(access_token);
       } else {
         router.push("/login");
       }
     };
+
     storageHandler();
 
     window.addEventListener("storage", storageHandler);
@@ -52,29 +109,14 @@ export default function Home() {
     return () => {
       window.removeEventListener("storage", storageHandler);
     };
-  }, [router]);
+  }, [handleTokenValidation, handleUserData, router]);
 
   const [requestedSection, setRequestedSection] = useState<CurrentSectionType>(
     CurrentSectionType.Welcome
   );
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
 
-  const userUUID = useMemo(() => uuidv4(), []);
-  const initEvent = useMemo(() => {
-    return {
-      entity: "server",
-      action: "init",
-      username: userUUID,
-    };
-  }, [userUUID]);
-
-  const { websocket, receivedData } = useWebSocket(
-    "ws://localhost:8000/",
-    initEvent
-  );
-
-  const { availableRooms, joinedRooms, roomChat } =
-    useReceivedData(receivedData);
+  const { availableRooms, joinedRooms, createdRooms } = useReceivedData(token);
 
   const handleSetCurrentRoom = useCallback(
     (room: Room) => setCurrentRoom(room),
@@ -95,7 +137,7 @@ export default function Home() {
 
   async function handleLogout() {
     try {
-      const response = await fetch("http://0.0.0.0:8081/token/revoke", {
+      const response = await fetch("http://0.0.0.0:8081/api/token/revoke", {
         method: "POST",
         headers: {
           "Content-type": "application/json",
@@ -119,67 +161,68 @@ export default function Home() {
   }
 
   // Its annoying to separate component and send data as props. too many props
-  const ResultComponent = useCallback(() => {
-    let goToDefault = false;
-    const defaultPage = <Typography paragraph>Welcome page</Typography>;
+  const ResultComponent = useCallback(
+    () => {
+      let goToDefault = false;
+      const defaultPage = <Typography paragraph>Welcome page</Typography>;
 
-    switch (requestedSection) {
-      case CurrentSectionType.NewRoom:
-        return <NewRoom websocket={websocket} userUUID={userUUID} />;
-      case CurrentSectionType.JoinedRoom:
-        if (currentRoom) {
-          return (
-            <ChatRoom
-              websocket={websocket}
-              userUUID={userUUID}
-              roomUUID={currentRoom.room_uuid}
-              messages={
-                roomChat?.get(currentRoom.room_uuid) || new Set<Message>()
-              }
-            />
-          );
-        } else {
-          goToDefault = true;
-          break;
-        }
+      switch (requestedSection) {
+        case CurrentSectionType.NewRoom:
+          return <NewRoom token={token} />;
+        case CurrentSectionType.JoinedRoom:
+          if (currentRoom) {
+            // return (
+            //   <ChatRoom
+            //     websocket={websocket}
+            //     userUUID={userUUID}
+            //     roomUUID={currentRoom.id}
+            //     messages={roomChat?.get(currentRoom.id) || new Set<Message>()}
+            //   />
+            // );
+          } else {
+            goToDefault = true;
+            break;
+          }
 
-      case CurrentSectionType.AskToJoinRoom:
-        if (currentRoom) {
-          return (
-            <AskToJoin
-              websocket={websocket}
-              userUUID={userUUID}
-              room={currentRoom}
-              handleCurrentWindowState={(windowState: CurrentSectionType) =>
-                setRequestedSection(windowState)
-              }
-              handleSetCurrentRoom={handleSetCurrentRoom}
-              handleClearRoom={handleClearRoom}
-            />
-          );
-        } else {
-          goToDefault = true;
-          break;
-        }
+        case CurrentSectionType.AskToJoinRoom:
+          if (currentRoom) {
+            // return (
+            //   <AskToJoin
+            //     websocket={websocket}
+            //     userUUID={userUUID}
+            //     room={currentRoom}
+            //     handleCurrentWindowState={(windowState: CurrentSectionType) =>
+            //       setRequestedSection(windowState)
+            //     }
+            //     handleSetCurrentRoom={handleSetCurrentRoom}
+            //     handleClearRoom={handleClearRoom}
+            //   />
+            // );
+          } else {
+            goToDefault = true;
+            break;
+          }
 
-      case CurrentSectionType.Welcome:
-        return <Typography paragraph>Welcome page</Typography>;
-      default:
+        case CurrentSectionType.Welcome:
+          return <Typography paragraph>Welcome page</Typography>;
+        default:
+          return defaultPage;
+      }
+
+      if (goToDefault) {
         return defaultPage;
-    }
-
-    if (goToDefault) {
-      return defaultPage;
-    }
-  }, [
-    currentRoom,
-    handleClearRoom,
-    handleSetCurrentRoom,
-    requestedSection,
-    roomChat,
-    userUUID,
-    websocket,
-  ]);
+      }
+    },
+    [
+      // currentRoom,
+      // handleClearRoom,
+      // handleSetCurrentRoom,
+      // requestedSection,
+      // roomChat,
+      // userUUID,
+      // websocket,
+    ]
+  );
 
   return (
     <Box display="flex" flexDirection="column" width="100%" height="100vh">
@@ -279,12 +322,13 @@ export default function Home() {
                 justifyContent="space-between"
                 alignItems="center"
               >
-                <Avatar alt="" src="">
-                  {name}
-                </Avatar>
-                <Typography>Test Name</Typography>
+                <Avatar alt="" src=""></Avatar>
+                <Typography>{user?.email}</Typography>
                 <Tooltip title="Log out" arrow>
-                  <IconButton aria-label="log-out" onClick={handleLogout}>
+                  <IconButton
+                    aria-label="log-out"
+                    onClick={async () => await handleLogout()}
+                  >
                     <LogoutIcon />
                   </IconButton>
                 </Tooltip>
@@ -292,7 +336,7 @@ export default function Home() {
             </Box>
             <Divider orientation="vertical" />
             <Box flexGrow="1" sx={{ width: `calc(100% - ${drawerWidth}px)` }}>
-              <ResultComponent />
+              {/* <ResultComponent /> */}
             </Box>
           </Box>
         </>
