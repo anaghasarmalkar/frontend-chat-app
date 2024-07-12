@@ -42,7 +42,7 @@ export default function Page() {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await fetch("http://0.0.0.0:8081/user/signup", {
+        const response = await fetch("http://0.0.0.0:8081/api/users/signup", {
           method: "POST",
           body: JSON.stringify(values),
           headers: {
