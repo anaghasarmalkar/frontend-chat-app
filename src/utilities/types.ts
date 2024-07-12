@@ -1,18 +1,17 @@
 export type Room = {
-  room_uuid: string;
+  id: string;
   name: string;
-  description?: string;
-  admins: string[];
-  created_by_user: string;
-  welcome_message: string;
-  messages: any[];
-  is_deleted: boolean;
+  description: string;
+  created: number;
+  created_by: number;
+  messages: Message[];
 };
 
 export type Message = {
-  message_uuid: string;
+  uid: string;
   message: string;
-  timestamp: string;
+  room_id: number;
+  sent: string;
   sender: string;
 };
 
@@ -22,3 +21,7 @@ export enum CurrentSectionType {
   JoinedRoom,
   AskToJoinRoom,
 }
+
+export type User = {
+  email: string;
+};
