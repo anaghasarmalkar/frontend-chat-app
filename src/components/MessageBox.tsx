@@ -1,9 +1,9 @@
 import { Message } from "@/utilities/types";
 import { Box, Typography } from "@mui/material";
 
-type MessageBoxProps = Pick<Message, "message" | "timestamp">;
+type MessageBoxProps = Pick<Message, "message" | "sent">;
 
-export default function MessageBox({ message, timestamp }: MessageBoxProps) {
+export default function MessageBox({ message, sent }: MessageBoxProps) {
   return (
     <Box
       sx={{
@@ -21,7 +21,7 @@ export default function MessageBox({ message, timestamp }: MessageBoxProps) {
       </Typography>
       <Typography sx={{ flexShrink: 0 }}>
         <Box sx={{ fontSize: 11 }}>
-          {new Date(timestamp).toLocaleTimeString([], {
+          {new Date(sent).toLocaleTimeString([], {
             timeStyle: "short",
           })}
         </Box>

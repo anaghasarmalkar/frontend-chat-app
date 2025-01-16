@@ -38,7 +38,7 @@ export default function AskToJoin({
         action: "join",
         username: userUUID,
         entity_data: {
-          room_uuid: room.room_uuid,
+          room_uuid: room.id,
         },
       };
       websocket.send(JSON.stringify(joinEvent));

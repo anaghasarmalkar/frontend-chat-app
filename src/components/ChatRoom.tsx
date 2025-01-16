@@ -73,7 +73,7 @@ export default function ChatRoom({
                 maxWidth: "70%",
               }}
             >
-              <MessageBox message={msg.message} timestamp={msg.sent} />
+              <MessageBox message={msg.message} sent={msg.sent} />
             </Box>
           ) : (
             <Box
@@ -91,7 +91,7 @@ export default function ChatRoom({
               <Typography variant="body1">
                 <Box sx={{ fontWeight: "bold" }}>{msg.sender.slice(0, 5)}</Box>
               </Typography>
-              <MessageBox message={msg.message} timestamp={msg.sent} />
+              <MessageBox message={msg.message} sent={msg.sent} />
             </Box>
           );
         })}
