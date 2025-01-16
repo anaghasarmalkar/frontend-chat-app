@@ -64,7 +64,7 @@ export default function ChatRoom({
         {Array.from(messages).map((msg) => {
           return msg.sender === userUUID ? (
             <Box
-              key={msg.message_uuid}
+              key={msg.uid}
               sx={{
                 backgroundColor: "#00b4d8",
                 marginLeft: "auto",
@@ -73,11 +73,11 @@ export default function ChatRoom({
                 maxWidth: "70%",
               }}
             >
-              <MessageBox message={msg.message} timestamp={msg.timestamp} />
+              <MessageBox message={msg.message} timestamp={msg.sent} />
             </Box>
           ) : (
             <Box
-              key={msg.message_uuid}
+              key={msg.uid}
               sx={{
                 display: "flex",
                 flexDirection: "column",
@@ -91,7 +91,7 @@ export default function ChatRoom({
               <Typography variant="body1">
                 <Box sx={{ fontWeight: "bold" }}>{msg.sender.slice(0, 5)}</Box>
               </Typography>
-              <MessageBox message={msg.message} timestamp={msg.timestamp} />
+              <MessageBox message={msg.message} timestamp={msg.sent} />
             </Box>
           );
         })}

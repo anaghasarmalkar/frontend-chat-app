@@ -168,7 +168,7 @@ export default function Home() {
 
       switch (requestedSection) {
         case CurrentSectionType.NewRoom:
-          return <NewRoom token={token} />;
+        // return <NewRoom token={token} />;
         case CurrentSectionType.JoinedRoom:
           if (currentRoom) {
             // return (
