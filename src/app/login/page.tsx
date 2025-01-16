@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import Errors from "../signup/errors";
 import { useAuthData } from "@/hooks/useAuthData";
+import SuccessfulUserCreation from "./SuccessfulUserCreation";
 
 type FieldValidationErrorState = {
   isError: boolean;
@@ -47,7 +48,6 @@ export default function Page() {
     }
   }, [authToken, router]);
 
-  const queryParam = useSearchParams();
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errors, setErrors] = useState<string[]>([]);
@@ -161,22 +161,10 @@ export default function Page() {
         />
         <Divider />
         <CardContent>
-          {queryParam.get("user_created") && (
-            <Paper
-              variant="outlined"
-              sx={{
-                margin: "0.5rem",
-                padding: "0.75rem",
-                color: "rgb(30, 70, 32)",
-                backgroundColor: "rgb(237, 247, 237)",
-              }}
-            >
-              <Typography align="center">
-                Your account was created successfully.
-              </Typography>
-              <Typography align="center">Please login to continue.</Typography>
-            </Paper>
-          )}
+          <Suspense>
+            <SuccessfulUserCreation />
+          </Suspense>
+
           <Box
             sx={{
               display: "flex",
